@@ -5,8 +5,11 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"os"
 	"path/filepath"
 )
+
+const indexerEnvPrefix = "JFROG_INDEXER_"
 
 type ContainerScanCommand struct {
 	ScanCommand
@@ -59,7 +62,37 @@ func (csc *ContainerScanCommand) Run() (err error) {
 		Pattern(tarFilePath).
 		BuildSpec()
 	csc.SetSpec(filSpec).SetThreads(1)
+
+	err = csc.setCredentialEnvsForIndexerApp()
+	if err != nil {
+		return err
+	}
+
 	return csc.ScanCommand.Run()
+}
+
+// when indexing docker rpm files the indexer app needs connection with Xray Server to deal with the rpm files
+func (csc *ContainerScanCommand) setCredentialEnvsForIndexerApp() error {
+	err := os.Setenv(indexerEnvPrefix+"XRAY_URL", csc.serverDetails.XrayUrl)
+	if err != nil {
+		return err
+	}
+	if csc.serverDetails.AccessToken != "" {
+		err = os.Setenv(indexerEnvPrefix+"XRAY_ACCESS_TOKEN", csc.serverDetails.AccessToken)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = os.Setenv(indexerEnvPrefix+"XRAY_USER", csc.serverDetails.User)
+		if err != nil {
+			return err
+		}
+		err = os.Setenv(indexerEnvPrefix+"XRAY_PASSWORD", csc.serverDetails.Password)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (csc *ContainerScanCommand) CommandName() string {
