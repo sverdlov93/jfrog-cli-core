@@ -2,15 +2,21 @@ package utils
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/gookit/color"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/xray/services"
+)
+
+type OutputFormat string
+
+const (
+	// OutputFormat values
+	Table OutputFormat = "table"
+	Json  OutputFormat = "json"
 )
 
 // PrintViolationsTable prints the violations in 3 tables: security violations, license compliance violations and ignore rule URLs.
@@ -348,14 +354,6 @@ func getDirectComponents(impactPaths [][]services.ImpactPathNode, multipleRoots 
 		components = append(components, row)
 	}
 	return components
-}
-
-func createTableWriter() table.Writer {
-	tableWriter := table.NewWriter()
-	tableWriter.SetOutputMirror(os.Stdout)
-	tableWriter.SetStyle(table.StyleLight)
-	tableWriter.Style().Options.SeparateRows = true
-	return tableWriter
 }
 
 type severity struct {

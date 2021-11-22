@@ -1,4 +1,4 @@
-package audit
+package scan
 
 import (
 	"errors"
@@ -96,5 +96,5 @@ func (csc *ContainerScanCommand) setCredentialEnvsForIndexerApp() error {
 }
 
 func (csc *ContainerScanCommand) CommandName() string {
-	return "xr_scan_container"
+	return "xr_container_scan"
 }
