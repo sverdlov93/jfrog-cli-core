@@ -162,24 +162,20 @@ func runPythonInstall(pythonTool pythonutils.PythonTool, requirementsFile string
 // Execute virtualenv command: "virtualenv venvdir" / "python3 -m venv venvdir" and set path
 func SetPipVirtualEnvPath() (func() error, error) {
 	var cmdArgs []string
-	execPath, err := exec.LookPath("virtualenv")
+	execPath, err := exec.LookPath("python3")
 	if err != nil || execPath == "" {
-		// If virtualenv not installed try "venv"
 		if runtime.GOOS == "windows" {
 			// If the OS is Windows try using Py Launcher: "py -3 -m venv"
 			execPath, err = exec.LookPath("py")
 			cmdArgs = append(cmdArgs, "-3", "-m", "venv")
-		} else {
-			// If the OS is Linux try using python3 executable: "python3 -m venv"
-			execPath, err = exec.LookPath("python3")
-			cmdArgs = append(cmdArgs, "-m", "venv")
 		}
-		if err != nil {
-			return nil, err
-		}
+
 		if execPath == "" {
-			return nil, errors.New("could not find python3 or virtualenv executable in PATH")
+			execPath = "python"
 		}
+	}
+	if len(cmdArgs) == 0 {
+		cmdArgs = append(cmdArgs, "-m", "venv")
 	}
 	cmdArgs = append(cmdArgs, "venvdir")
 	var stderr bytes.Buffer
@@ -187,7 +183,7 @@ func SetPipVirtualEnvPath() (func() error, error) {
 	pipVenv.Stderr = &stderr
 	err = pipVenv.Run()
 	if err != nil {
-		return nil, fmt.Errorf("pipenv install command failed: %s - %s", err.Error(), stderr.String())
+		return nil, fmt.Errorf("failed to create virtual environment: %s - %s", err.Error(), stderr.String())
 	}
 
 	// Keep original value of 'PATH'.
@@ -199,10 +195,10 @@ func SetPipVirtualEnvPath() (func() error, error) {
 	var virtualEnvPath string
 	if runtime.GOOS == "windows" {
 		virtualEnvPath, err = filepath.Abs(filepath.Join("venvdir", "Scripts"))
-		newPathValue = fmt.Sprintf("%s;", virtualEnvPath)
+		newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
 	} else {
 		virtualEnvPath, err = filepath.Abs(filepath.Join("venvdir", "bin"))
-		newPathValue = fmt.Sprintf("%s:", virtualEnvPath)
+		newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
 	}
 	if err != nil {
 		return nil, err
